@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>d3 Examples</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.4.1/d3.js"></script>
+    <style>
+        #chart div {
+            font: 10px sans-serif;
+            background-color: steelblue;
+            text-align: right;
+            padding: 3px;
+            margin: 1px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <a href="/index.html">Back to Index</a></li>
+    <h1>Bar Chart with Divs</h1>
+    <div id="chart"></div>
+    <script>
+        jQuery(function() {
+            var data = [4, 8, 15, 16, 23, 42];
+
+            var x = d3.scaleLinear()
+                .domain([0, d3.max(data)])
+                .range([0, 420]);
+
+            d3.select("#chart")
+              .selectAll("div")
+                .data(data)
+              .enter().append("div")
+                .style("width", function(d) { return x(d) + "px"; })
+                .text(function(d) { return d; });
+        });
+    </script>
+</body>
+</html>
+
