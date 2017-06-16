@@ -1,0 +1,25 @@
+body {
+    margin: 1em 6em;
+    font-family: "DejaVu Serif";
+}
+
+h1 {
+    font-weight: normal;
+    font-size: 2.5em;
+}
+
+div#backLink {
+    position: fixed;
+    margin-left: -5em;
+    margin-top: 1em;
+    width: 4em;
+    background-color: lightgray;
+    border-radius: 1em;
+    text-align: center;
+    font-family: "DejaVu Sans";
+}
+
+div#backLink a {
+    color: white;
+    text-decoration: none;
+}
