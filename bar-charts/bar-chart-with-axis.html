@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>d3 Examples</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.4.1/d3.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <style>
+        #chart rect {
+            fill: steelblue;
+        }
+
+        g.bar text {
+            fill: white;
+            font: 10px sans-serif;
+            text-anchor: end;
+        }
+        
+        pre {
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div id="backLink">
+        <a href="/index.html">Back</a>
+    </div>
+    <h1>Bar Chart with Axis</h1>
+    <div id="chart"></div>
+    <input type="button" onclick="updateWithRandomData()" value="Update Values">
+    <pre>
+        <code class="javascript">
+        </code>
+    </pre>
+    <script>
+
+        // global namespace
+        var D3EXAMPLES = D3EXAMPLES || {};
+
+        D3EXAMPLES.barChart = function (config) {
+
+            this.config = config;
+            this.config.dataX = this.config.yAxisWidth + 1;
+            this.config.dataY = 0;
+            this.config.dataWidth = this.config.width - this.config.yAxisWidth;
+            this.config.dataHeight = this.config.height - this.config.xAxisHeight;
+            this.config.barHeight = this.config.dataHeight / this.config.data.length;
+
+            // Construct a new continuous scale 'xScale' with the unit domain [0, max(data)] and the unit range [0, config.width].
+            // This way we get a mapping of data values to widths in pixel.
+            this.xScale = d3.scaleLinear()
+                .domain([0, d3.max(config.data)])
+                .range([0, this.config.dataWidth]);
+
+            // Select the html element #chart and add an svg node with width and height
+            this.chart = d3.select("#"+config.divId)
+                .append("svg")
+                .attr("width", this.config.width)
+                .attr("height", this.config.height);
+
+
+            // Select all g nodes and bind data to it
+            this.bars = this.chart.selectAll("g.bar")
+                .data(config.data)
+
+                // Enter returns all nodes that are added (which are all in this special case)
+                .enter()
+                .append("g")
+                .attr("class", "bar")
+                .attr("transform", function(d, i) { return "translate(" + this.config.dataX + ", " + i * this.config.barHeight + ")"; }.bind(this));
+
+            this.bars.append("rect")
+                .attr("width", this.xScale)
+                .attr("height", config.barHeight - 1);
+
+            this.bars.append("text")
+                .attr("x", function(d) { return this.xScale(d) - 3; }.bind(this))
+                .attr("y", config.barHeight / 2)
+                .attr("dy", ".35em")
+                .text(function(d) { return d; });
+
+            // Define x axis
+            this.xAxis = d3.axisBottom(this.xScale);
+            this.chart.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(" + this.config.dataX + ", " + (this.config.dataHeight+5) + ")")
+                .call(this.xAxis);
+        };
+
+
+
+        D3EXAMPLES.barChart.prototype.updateData = function (data) {
+
+            // Rescale the scales
+            this.xScale
+                .domain([0, d3.max(data)])
+                .range([0, this.config.dataWidth]);
+
+            // Bind new data to bars
+            this.bars.data(data)
+
+            // Here we handle the updated bars
+            this.bars.select("rect")
+                .transition().duration(750)
+                .attr("width", this.xScale)
+            this.bars.select("text")
+                .transition().duration(750)
+                .attr("x", function(d) { return this.xScale(d) - 3; }.bind(this))
+                .text(function(d) { return d; });
+
+            this.chart.select("g.x.axis")
+                .transition().duration(750)
+                .call(this.xAxis);
+        };
+
+
+
+        var barChart;
+
+        jQuery(function() {
+            barChart = new D3EXAMPLES.barChart({
+                "divId": "chart",
+                "width": 420,
+                "height": 150,
+                "xAxisHeight": 30,
+                "yAxisWidth": 30,
+                "data": [4, 8, 15, 16, 23, 42]
+            });
+        });
+
+        function updateWithRandomData() {
+            data = [
+                Math.floor((Math.random() * 100) +1),
+                Math.floor((Math.random() * 100) +1),
+                Math.floor((Math.random() * 100) +1),
+                Math.floor((Math.random() * 100) +1),
+                Math.floor((Math.random() * 100) +1),
+                Math.floor((Math.random() * 100) +1)
+            ]
+
+            barChart.updateData(data);
+        }
+    </script>
+</body>
+</html>
+
