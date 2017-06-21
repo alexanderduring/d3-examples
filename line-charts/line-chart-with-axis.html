@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>d3 Examples</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.4.1/d3.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <style>
+        #chart rect {
+            fill: steelblue;
+        }
+
+        g.bar text {
+            fill: white;
+            font: 10px sans-serif;
+            text-anchor: end;
+        }
+        
+        pre {
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div id="backLink">
+        <a href="/index.html">Back</a>
+    </div>
+    <h1>Line Chart with Axis</h1>
+    <div id="chart"></div>
+    <pre>
+        <code class="javascript">
+// global namespace
+var D3EXAMPLES = D3EXAMPLES || {};
+
+D3EXAMPLES.lineChart = function (config) {
+
+    var chart;
+    var dataSpace;
+    var xAxisSpace;
+    var yAxisSpace;
+    var line;
+    var xScale, yScale, zScale;
+    var xAxis, yAxis;
+    var parseTime = d3.timeParse("%Y-%m-%d");
+
+    config.marginTop = 10;
+    config.marginRight = 30;
+    config.dataX = config.yAxisWidth;
+    config.dataY = config.marginTop;
+    config.dataWidth = config.width - config.yAxisWidth - config.marginRight;
+    config.dataHeight = config.height - config.xAxisHeight - config.marginTop;
+
+    config.xAxisX = config.dataX;
+    config.xAxisY = config.marginTop + config.dataHeight;
+    config.yAxisX = config.yAxisWidth;
+    config.yAxisY = config.marginTop;
+
+    // #### Setup ####
+
+    // Define scales
+    xScale = d3.scaleTime().range([0, config.dataWidth]);
+    yScale = d3.scaleLinear().range([config.dataHeight, 0]);
+    zScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+    // Define axes
+    xAxis = d3.axisBottom(xScale);
+    yAxis = d3.axisLeft(yScale)
+
+    // Define a line
+    line = d3.line()
+        .x(function (d) { return xScale(d.date); })
+        .y(function (d) { return yScale(d.quantity); });
+
+
+    // #### Inital Drawing ####
+
+    // Select the html element #chart and add an svg node with width and height
+    chart = d3.select("#"+config.divId)
+        .append("svg")
+          .attr("width", config.width)
+          .attr("height", config.height)
+        .append("g")
+          .attr("class", "offset")
+          .attr("transform", "translate(0.5, 0.5)");
+
+    // Create g element for the data space
+    dataSpace = chart.append("g")
+        .attr("class", "dataSpace")
+        .attr("transform", "translate(" + config.dataX + ", " + config.dataY + ")");
+
+    xAxisSpace = chart.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(" + config.xAxisX + ", " + config.xAxisY + ")");
+
+    yAxisSpace = chart.append("g")
+        .attr("class", "y axis")
+        .attr("transform", "translate(" + config.yAxisX + ", " + config.yAxisY + ")");
+    yAxisSpace.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", "0.7em")
+        .text("Quantity");
+
+
+    this.loadData = function (datasets)
+    {
+        // Iterate over all data in all datasets and convert date strings to unix timestamps
+        datasets.forEach(function (dataset) {
+            dataset.values.forEach(function (value) {
+                value.date = parseTime(value.date);
+            });
+        });
+
+        // Adjust scales to data
+        xScale.domain([
+            d3.min(datasets, function (c) { return d3.min(c.values, function (d) { return d.date; }) }),
+            d3.max(datasets, function (c) { return d3.max(c.values, function (d) { return d.date; }) })
+        ]);
+        yScale.domain([
+            d3.min(datasets, function (c) { return d3.min(c.values, function (d) { return d.quantity; }) }),
+            d3.max(datasets, function (c) { return d3.max(c.values, function (d) { return d.quantity; }) })
+        ]);
+        zScale.domain(datasets.map(function (c) { return c.id; }));
+
+        // Draw axes
+        xAxisSpace.call(xAxis);
+        yAxisSpace.call(yAxis);
+
+        // Draw lines
+        var updatedLines = dataSpace.selectAll("g.curve").data(datasets);
+
+        var newCurves = updatedLines.enter()
+            .append("g")
+            .attr("class", "curve");
+
+        newCurves.append("path")
+            .attr("class", "line")
+            .attr("d", function (d) { return line(d.values); })
+            .style("stroke", function (d) { return zScale(d.id); })
+            .style("fill", "none");
+
+        newCurves.append("text")
+            .datum(function (d) { return { id: d.id, value: d.values[d.values.length - 1]}; })
+            .attr("transform", function (d) { return "translate(" + xScale(d.value.date) + "," + yScale(d.value.quantity) + ")"; })
+            .attr("dx", 3)
+            .attr("dy", "0.35em")
+            .style("font", "10px sans-serif")
+            .text(function (d) { return d.id; });
+
+        updatedLines.exit()
+            .remove();
+
+    };
+};
+
+
+
+var lineChart;
+
+jQuery(function() {
+    lineChart = new D3EXAMPLES.lineChart({
+        "divId": "chart",
+        "width": 420,
+        "height": 260,
+        "xAxisHeight": 30,
+        "yAxisWidth": 30
+    });
+
+    lineChart.loadData(
+        [
+            {
+                "id": "Foo",
+                "values": [
+                    {"date": "2017-06-19", "quantity": 3},
+                    {"date": "2017-06-20", "quantity": 5},
+                    {"date": "2017-06-21", "quantity": 2}
+                ]
+            },
+            {
+                "id": "Bar",
+                "values": [
+                    {"date": "2017-06-19", "quantity": 4},
+                    {"date": "2017-06-20", "quantity": 2},
+                    {"date": "2017-06-21", "quantity": 1}
+                ]
+            },
+            {
+                "id": "Bat",
+                "values": [
+                    {"date": "2017-06-19", "quantity": 1},
+                    {"date": "2017-06-20", "quantity": 4},
+                    {"date": "2017-06-21", "quantity": 3}
+                ]
+            }
+        ]
+    );
+});
+        </code>
+    </pre>
+    <script>
+
+        // global namespace
+        var D3EXAMPLES = D3EXAMPLES || {};
+
+        D3EXAMPLES.lineChart = function (config) {
+
+            var chart;
+            var dataSpace;
+            var xAxisSpace;
+            var yAxisSpace;
+            var line;
+            var xScale, yScale, zScale;
+            var xAxis, yAxis;
+            var parseTime = d3.timeParse("%Y-%m-%d");
+
+            config.marginTop = 10;
+            config.marginRight = 30;
+            config.dataX = config.yAxisWidth;
+            config.dataY = config.marginTop;
+            config.dataWidth = config.width - config.yAxisWidth - config.marginRight;
+            config.dataHeight = config.height - config.xAxisHeight - config.marginTop;
+
+            config.xAxisX = config.dataX;
+            config.xAxisY = config.marginTop + config.dataHeight;
+            config.yAxisX = config.yAxisWidth;
+            config.yAxisY = config.marginTop;
+
+            // #### Setup ####
+
+            // Define scales
+            xScale = d3.scaleTime().range([0, config.dataWidth]);
+            yScale = d3.scaleLinear().range([config.dataHeight, 0]);
+            zScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+            // Define axes
+            xAxis = d3.axisBottom(xScale);
+            yAxis = d3.axisLeft(yScale)
+
+            // Define a line
+            line = d3.line()
+                .x(function (d) { return xScale(d.date); })
+                .y(function (d) { return yScale(d.quantity); });
+
+
+            // #### Inital Drawing ####
+
+            // Select the html element #chart and add an svg node with width and height
+            chart = d3.select("#"+config.divId)
+                .append("svg")
+                  .attr("width", config.width)
+                  .attr("height", config.height)
+                .append("g")
+                  .attr("class", "offset")
+                  .attr("transform", "translate(0.5, 0.5)");
+
+            // Create g element for the data space
+            dataSpace = chart.append("g")
+                .attr("class", "dataSpace")
+                .attr("transform", "translate(" + config.dataX + ", " + config.dataY + ")");
+
+            xAxisSpace = chart.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(" + config.xAxisX + ", " + config.xAxisY + ")");
+
+            yAxisSpace = chart.append("g")
+                .attr("class", "y axis")
+                .attr("transform", "translate(" + config.yAxisX + ", " + config.yAxisY + ")");
+            yAxisSpace.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 6)
+                .attr("dy", "0.7em")
+                .text("Quantity");
+
+
+            this.loadData = function (datasets)
+            {
+                // Iterate over all data in all datasets and convert date strings to unix timestamps
+                datasets.forEach(function (dataset) {
+                    dataset.values.forEach(function (value) {
+                        value.date = parseTime(value.date);
+                    });
+                });
+
+                // Adjust scales to data
+                xScale.domain([
+                    d3.min(datasets, function (c) { return d3.min(c.values, function (d) { return d.date; }) }),
+                    d3.max(datasets, function (c) { return d3.max(c.values, function (d) { return d.date; }) })
+                ]);
+                yScale.domain([
+                    d3.min(datasets, function (c) { return d3.min(c.values, function (d) { return d.quantity; }) }),
+                    d3.max(datasets, function (c) { return d3.max(c.values, function (d) { return d.quantity; }) })
+                ]);
+                zScale.domain(datasets.map(function (c) { return c.id; }));
+
+                // Draw axes
+                xAxisSpace.call(xAxis);
+                yAxisSpace.call(yAxis);
+
+                // Draw lines
+                var updatedLines = dataSpace.selectAll("g.curve").data(datasets);
+
+                var newCurves = updatedLines.enter()
+                    .append("g")
+                    .attr("class", "curve");
+
+                newCurves.append("path")
+                    .attr("class", "line")
+                    .attr("d", function (d) { return line(d.values); })
+                    .style("stroke", function (d) { return zScale(d.id); })
+                    .style("fill", "none");
+
+                newCurves.append("text")
+                    .datum(function (d) { return { id: d.id, value: d.values[d.values.length - 1]}; })
+                    .attr("transform", function (d) { return "translate(" + xScale(d.value.date) + "," + yScale(d.value.quantity) + ")"; })
+                    .attr("dx", 3)
+                    .attr("dy", "0.35em")
+                    .style("font", "10px sans-serif")
+                    .text(function (d) { return d.id; });
+
+                updatedLines.exit()
+                    .remove();
+
+            };
+        };
+
+
+
+        var lineChart;
+
+        jQuery(function() {
+            lineChart = new D3EXAMPLES.lineChart({
+                "divId": "chart",
+                "width": 420,
+                "height": 260,
+                "xAxisHeight": 30,
+                "yAxisWidth": 30
+            });
+
+            lineChart.loadData(
+                [
+                    {
+                        "id": "Foo",
+                        "values": [
+                            {"date": "2017-06-19", "quantity": 3},
+                            {"date": "2017-06-20", "quantity": 5},
+                            {"date": "2017-06-21", "quantity": 2}
+                        ]
+                    },
+                    {
+                        "id": "Bar",
+                        "values": [
+                            {"date": "2017-06-19", "quantity": 4},
+                            {"date": "2017-06-20", "quantity": 2},
+                            {"date": "2017-06-21", "quantity": 1}
+                        ]
+                    },
+                    {
+                        "id": "Bat",
+                        "values": [
+                            {"date": "2017-06-19", "quantity": 1},
+                            {"date": "2017-06-20", "quantity": 4},
+                            {"date": "2017-06-21", "quantity": 3}
+                        ]
+                    }
+                ]
+            );
+        });
+    </script>
+</body>
+</html>
+
