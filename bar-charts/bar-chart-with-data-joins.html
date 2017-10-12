@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>d3 Examples</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.4.1/d3.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <style>
+        #chart rect {
+            fill: steelblue;
+        }
+
+        g.bar text {
+            fill: white;
+            font: 10px sans-serif;
+            text-anchor: end;
+        }
+    </style>
+</head>
+<body>
+    <div id="backLink">
+        <a href="/index.html">Back</a>
+    </div>
+    <h1>Bar Chart with Data Joins</h1>
+    <p>See <a href="https://bl.ocks.org/ckothari/699b112b6e1376779e65973bbabdced6">https://bl.ocks.org/ckothari/699b112b6e1376779e65973bbabdced6</a></p>
+    <div id="chart"></div>
+    <input type="button" onclick="updateWithRandomData()" value="Update Values">
+    <pre>
+        <code class="javascript">
+        </code>
+    </pre>
+    <script>
+        var width = 420;
+        var barheight = 30;
+        var xScale;
+        var bars;
+
+        var svg = d3.select('#chart')
+            .append('svg')
+            .attr('width', width + 50)
+            .attr('height', 300);
+
+
+
+        xScale = d3.scaleLinear();
+        xScale.range([0, width]);
+
+        bars = svg.selectAll('g');
+
+        function createBar(data) {
+            xScale.domain([0, d3.max(data)]);
+            var barGroups = bars.data(data, function(d){return d;});
+
+            barGroups.exit().remove();
+
+            var enterGroup = barGroups.enter() //ENTER
+                .append('g');
+
+            enterGroup.append('rect')
+                .attr('class', 'bar')
+                .attr('height', barheight - 1)
+                .attr('fill', 'steelblue');
+
+            enterGroup.append('text')
+                .attr('class', 'text')
+                .attr("y", barheight / 2)
+                .attr("dy", ".35em");
+
+            var mergedGroups = enterGroup.merge(barGroups)
+                .attr("transform", function(d, i){
+                    return "translate(0, " + barheight * i + ")";
+                });
+
+            mergedGroups.selectAll('rect')
+                .attr('width', function(d){
+                    return xScale(d);
+                });
+
+            mergedGroups.selectAll('text')
+                .attr("x", function(d) { return xScale(d) + 10; })
+                .text(function(d) { return d;});
+        }
+        var data = [
+            [10, 20, 30],
+            [10, 20, 40],
+            [10, 20, 200, 500],
+            [50, 20, 10],
+            [50, 20, 10, 1000, 5000]
+        ];
+        function start(counter){
+            if(counter < data.length){
+                setTimeout(function(){
+                    counter++;
+                    createBar(data[counter]);
+                    start(counter);
+                }, 1000);
+            }
+        }
+        start(0);
+    </script>
+</body>
+</html>
+

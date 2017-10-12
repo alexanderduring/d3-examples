@@ -19,7 +19,15 @@ div#backLink {
     font-family: "DejaVu Sans";
 }
 
+div#backLink:hover {
+    background-color: darkgray;
+}
+
 div#backLink a {
     color: white;
     text-decoration: none;
+}
+
+pre {
+    font-size: 1.2em;
 }

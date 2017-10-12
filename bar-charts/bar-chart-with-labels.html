@@ -25,133 +25,11 @@
     <div id="backLink">
         <a href="/index.html">Back</a>
     </div>
-    <h1>Bar Chart with Axis</h1>
+    <h1>Bar Chart with Labels</h1>
     <div id="chart"></div>
     <input type="button" onclick="updateWithRandomData()" value="Update Values">
     <pre>
         <code class="javascript">
-// global namespace
-var D3EXAMPLES = D3EXAMPLES || {};
-
-D3EXAMPLES.barChart = function (config) {
-
-    var chart;
-    var dataSpace;
-    var bars;
-    var xScale;
-    var xAxis;
-
-    config.marginTop = 10;
-    config.marginRight = 10;
-    config.dataX = config.yAxisWidth;
-    config.dataY = config.marginTop;
-    config.dataWidth = config.width - config.yAxisWidth - config.marginRight;
-    config.dataHeight = config.height - config.xAxisHeight - config.marginTop;
-    config.barHeight = config.dataHeight / config.data.length;
-
-    config.xAxisX = config.dataX;
-    config.xAxisY = config.marginTop + config.dataHeight;
-
-    // Construct a new continuous scale 'xScale' with the unit domain [0, max(data)] and the unit range [0, config.width].
-    // This way we get a mapping of data values to widths in pixel.
-    xScale = d3.scaleLinear();
-    xScale.domain([0, d3.max(config.data)]);
-    xScale.range([0, config.dataWidth]);
-
-    // Select the html element #chart and add an svg node with width and height
-    chart = d3.select("#"+config.divId)
-        .append("svg")
-          .attr("width", config.width)
-          .attr("height", config.height)
-        .append("g")
-          .attr("class", "offset")
-          .attr("transform", "translate(0.5, 0.5)");
-
-    // Create g element for the data space
-    dataSpace = chart.append("g")
-        .attr("class", "dataSpace")
-        .attr("transform", "translate(" + config.dataX + ", " + config.dataY + ")");
-
-    // Select all g nodes and bind data to it
-    bars = dataSpace.selectAll("g.bar")
-        .data(config.data)
-
-        // Enter returns all nodes that are added (which are all in this special case)
-        .enter()
-        .append("g")
-        .attr("class", "bar")
-        .attr("transform", function(d, i) { return "translate(0, " + i * config.barHeight + ")"; });
-
-    bars.append("rect")
-        .attr("width", xScale)
-        .attr("height", config.barHeight - 1);
-
-    bars.append("text")
-        .attr("x", function(d) { return xScale(d) - 3; })
-        .attr("y", config.barHeight / 2)
-        .attr("dy", ".35em")
-        .text(function(d) { return d; });
-
-    // Define x axis
-    xAxis = d3.axisBottom(xScale);
-    chart.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(" + config.xAxisX + ", " + (config.xAxisY + 5) + ")")
-        .call(xAxis);
-
-
-
-    this.updateData = function (data) {
-
-        // Rescale the scales
-        xScale.domain([0, d3.max(data)]);
-        xScale.range([0, config.dataWidth]);
-
-        // Bind new data to bars
-        bars.data(data)
-
-        // Here we handle the updated bars
-        bars.select("rect")
-            .transition().duration(750)
-            .attr("width", xScale)
-        bars.select("text")
-            .transition().duration(750)
-            .attr("x", function(d) { return xScale(d) - 3; })
-            .text(function(d) { return d; });
-
-        chart.select("g.x.axis")
-            .transition().duration(750)
-            .call(xAxis);
-    };
-};
-
-
-
-var barChart;
-
-jQuery(function() {
-    barChart = new D3EXAMPLES.barChart({
-        "divId": "chart",
-        "width": 420,
-        "height": 160,
-        "xAxisHeight": 30,
-        "yAxisWidth": 10,
-        "data": [4, 8, 15, 16, 23, 42]
-    });
-});
-
-function updateWithRandomData() {
-    data = [
-        Math.floor((Math.random() * 100) +1),
-        Math.floor((Math.random() * 100) +1),
-        Math.floor((Math.random() * 100) +1),
-        Math.floor((Math.random() * 100) +1),
-        Math.floor((Math.random() * 100) +1),
-        Math.floor((Math.random() * 100) +1)
-    ]
-
-    barChart.updateData(data);
-}
         </code>
     </pre>
     <script>
@@ -181,8 +59,8 @@ function updateWithRandomData() {
             // Construct a new continuous scale 'xScale' with the unit domain [0, max(data)] and the unit range [0, config.width].
             // This way we get a mapping of data values to widths in pixel.
             xScale = d3.scaleLinear();
-            xScale.domain([0, d3.max(config.data)]);
-            xScale.range([0, config.dataWidth]);
+//            xScale.domain([0, d3.max(config.data)]);
+//            xScale.range([0, config.dataWidth]);
 
             // Select the html element #chart and add an svg node with width and height
             chart = d3.select("#"+config.divId)
@@ -200,30 +78,30 @@ function updateWithRandomData() {
 
             // Select all g nodes and bind data to it
             bars = dataSpace.selectAll("g.bar")
-                .data(config.data)
+//                .data(config.data)
 
                 // Enter returns all nodes that are added (which are all in this special case)
-                .enter()
-                .append("g")
-                .attr("class", "bar")
-                .attr("transform", function(d, i) { return "translate(0, " + i * config.barHeight + ")"; });
-
-            bars.append("rect")
-                .attr("width", xScale)
-                .attr("height", config.barHeight - 1);
-
-            bars.append("text")
-                .attr("x", function(d) { return xScale(d) - 3; })
-                .attr("y", config.barHeight / 2)
-                .attr("dy", ".35em")
-                .text(function(d) { return d; });
+//                .enter()
+//                .append("g")
+//                .attr("class", "bar")
+//                .attr("transform", function(d, i) { return "translate(0, " + i * config.barHeight + ")"; });
+//
+//            bars.append("rect")
+//                .attr("width", xScale)
+//                .attr("height", config.barHeight - 1);
+//
+//            bars.append("text")
+//                .attr("x", function(d) { return xScale(d) - 3; })
+//                .attr("y", config.barHeight / 2)
+//                .attr("dy", ".35em")
+//                .text(function(d) { return d; });
 
             // Define x axis
             xAxis = d3.axisBottom(xScale);
             chart.append("g")
                 .attr("class", "x axis")
                 .attr("transform", "translate(" + config.xAxisX + ", " + (config.xAxisY + 5) + ")")
-                .call(xAxis);
+//                .call(xAxis);
 
 
 
@@ -234,16 +112,48 @@ function updateWithRandomData() {
                 xScale.range([0, config.dataWidth]);
 
                 // Bind new data to bars
-                bars.data(data)
+                var updatedBars = dataSpace.selectAll("g.bar")
+                    .data(data, function (d) { return d; });
 
-                // Here we handle the updated bars
-                bars.select("rect")
+                updatedBars.exit()
+                    .select("rect")
                     .transition().duration(750)
+                    .attr("height", 0)
+                    .remove();
+
+                updatedBars.select("rect")
+                    .transition().duration(750)
+                    .attr("width", xScale);
+
+                var enteredBars = updatedBars.enter()
+                    .append("g")
+                    .attr("class", "bar");
+
+                enteredBars.append("rect")
                     .attr("width", xScale)
-                bars.select("text")
+                    .attr("height", config.barHeight - 1)
+
+                enteredBars.append("text")
+                    .attr("x", function(d) { return xScale(d) - 3; })
+                    .attr("y", config.barHeight / 2)
+                    .attr("dy", ".35em")
+                    .text(function(d) { return d; });
+
+                // Merge the entered with the updated bars to transform them all
+                var mergedBars = enteredBars.merge(updatedBars)
+                    .attr("transform", function (d, i) {
+                        return "translate(0, " + i * config.barHeight + ")";
+                    });
+
+                mergedBars.select("rect")
+                    .transition().duration(750)
+                    .attr("width", xScale);
+                mergedBars.select("text")
                     .transition().duration(750)
                     .attr("x", function(d) { return xScale(d) - 3; })
                     .text(function(d) { return d; });
+
+
 
                 chart.select("g.x.axis")
                     .transition().duration(750)
