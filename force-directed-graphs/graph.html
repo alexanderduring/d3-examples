@@ -27,8 +27,7 @@
     </div>
     <h1>Force Directed Graph</h1>
     <svg width="600" height="400" viewBox="0 0 600 400"></svg>
-    <button id="zoom-in">+</button>
-    <button id="zoom-out">-</button>
+    <p>Use the mouse to drag the nodes or the move the entire graph. Use the mouse wheel to zoom in or out.</p>
     <pre>
         <code class="javascript">
         </code>
@@ -37,7 +36,23 @@
         var svg = d3.select("svg"),
         width = +svg.attr("width"),
         height = +svg.attr("height");
-        var zoom = 1;
+
+
+        // Zoom Feature
+
+        svg.append("rect")
+          .attr("fill", "none")
+          .attr("pointer-events", "all")
+          .attr("width", width)
+          .attr("height", height)
+          .call(d3.zoom()
+            .scaleExtent([1, 8])
+            .on("zoom", function () {
+                drawing.attr("transform", d3.event.transform);
+            }));
+
+
+        // Force Directed Graph
 
         var color = d3.scaleOrdinal(d3.schemeCategory20);
 
@@ -46,18 +61,21 @@
           .force("charge", d3.forceManyBody())
           .force("center", d3.forceCenter(width / 2, height / 2));
 
+        var drawing = svg.append("g")
+          .attr("class", "drawing");
+
         d3.json("data.json", function(error, graph)
         {
             if (error) throw error;
 
-            var link = svg.append("g")
+            var link = drawing.append("g")
               .attr("class", "links")
               .selectAll("line")
               .data(graph.links)
               .enter().append("line")
                 .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
 
-            var node = svg.append("g")
+            var node = drawing.append("g")
               .attr("class", "nodes")
               .selectAll("circle")
               .data(graph.nodes)
@@ -114,24 +132,6 @@
             d.fy = null;
         }
 
-
-        d3.select("button#zoom-in")
-          .on("click", function (d) {
-              zoom = zoom - 0.1
-              adjustZoom(zoom);
-          });
-
-        d3.select("button#zoom-out")
-          .on("click", function (d) {
-              zoom = zoom + 0.1
-              adjustZoom(zoom);
-          });
-
-        function adjustZoom(zoom)
-        {
-            svg.attr('viewBox', '0 0 '+600*zoom+' '+400*zoom);
-        }
-      
     </script>
 </body>
 </html>
