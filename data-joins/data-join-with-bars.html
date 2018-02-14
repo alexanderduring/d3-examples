@@ -35,20 +35,18 @@
     <pre>
         <code class="javascript">
 jQuery(function () {
+
     var chart = d3.select("#chart");
     var width = chart.attr("width");
     var height = chart.attr("height");
 
-    d3.select("#button-update").on("click", function () {
-        updateBars()
-    });
-        
-    d3.select("#button-randomize").on("click", function () {
-        data = getRandomData();
-        d3.select("#data").property("value", JSON.stringify(data));
-        updateBars()
-    });
-        
+
+
+    initializeButtons();
+    updateBars();
+
+
+
     function updateBars()
     {
         var dataValues = d3.select("#data").property("value");
@@ -58,7 +56,6 @@ jQuery(function () {
         var xScale = d3.scaleLinear()
             .domain([0, d3.max(data)])
             .range([0, width]);
-
         
         var updatedElements = d3.select("#chart").selectAll("rect").data(data);
 
@@ -77,6 +74,8 @@ jQuery(function () {
             .attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; });
     }
 
+
+
     function getRandomData()
     {
         var data = [];
@@ -89,24 +88,38 @@ jQuery(function () {
 
         return data;
     }
+
+
+
+    function initializeButtons()
+    {
+        d3.select("#button-update").on("click", function () {
+            updateBars()
+        });
+
+        d3.select("#button-randomize").on("click", function () {
+            data = getRandomData();
+            d3.select("#data").property("value", JSON.stringify(data));
+            updateBars()
+        });
+    }
+
 });
         </code>
     </pre>
     <script>
         jQuery(function () {
+
             var chart = d3.select("#chart");
             var width = chart.attr("width");
             var height = chart.attr("height");
 
-            d3.select("#button-update").on("click", function () {
-                updateBars()
-            });
+
+
+            initializeButtons();
+            updateBars();
+
         
-            d3.select("#button-randomize").on("click", function () {
-                data = getRandomData();
-                d3.select("#data").property("value", JSON.stringify(data));
-                updateBars()
-            });
         
             function updateBars()
             {
@@ -118,7 +131,6 @@ jQuery(function () {
                     .domain([0, d3.max(data)])
                     .range([0, width]);
 
-        
                 var updatedElements = d3.select("#chart").selectAll("rect").data(data);
 
                 updatedElements.enter()
@@ -136,6 +148,8 @@ jQuery(function () {
                     .attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; });
             }
 
+
+
             function getRandomData()
             {
                 var data = [];
@@ -148,9 +162,23 @@ jQuery(function () {
 
                 return data;
             }
+
+
+
+            function initializeButtons()
+            {
+                d3.select("#button-update").on("click", function () {
+                    updateBars()
+                });
+
+                d3.select("#button-randomize").on("click", function () {
+                    data = getRandomData();
+                    d3.select("#data").property("value", JSON.stringify(data));
+                    updateBars()
+                });
+            }
         });
-        
-        
+
     </script>
 </body>
 </html>
