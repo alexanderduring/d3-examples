@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>d3 Examples</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.4.1/d3.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <style>
+        #chart rect {
+            fill: steelblue;
+        }
+
+        #chart text {
+            fill: black;
+            font: 10px sans-serif;
+            text-anchor: begin;
+        }
+    </style>
+</head>
+<body>
+    <div id="backLink">
+        <a href="/index.html">Back</a>
+    </div>
+    <h1>Data Join with Line Chart</h1>
+    <div id="chart"></div>
+    <p>
+        <input type="button" id="button-one" value="Load Dataset One">
+        <input type="button" id="button-two" value="Load Dataset Two">
+    <p/>
+    <pre>
+        <code class="javascript">
+        </code>
+    </pre>
+    <script>
+        // global namespace
+        var d3examples = d3examples || {};
+
+        d3examples.lineChart = function (config) {
+
+            var chart;
+            var dataSpace;
+            var xAxisSpace;
+            var yAxisSpace;
+            var line;
+            var xScale, yScale, zScale;
+            var xAxis, yAxis;
+            var parseTime = d3.timeParse("%Y-%m-%d");
+
+            config.marginTop = 10;
+            config.marginRight = 50;
+            config.dataX = config.yAxisWidth;
+            config.dataY = config.marginTop;
+            config.dataWidth = config.width - config.yAxisWidth - config.marginRight;
+            config.dataHeight = config.height - config.xAxisHeight - config.marginTop;
+
+            config.xAxisX = config.dataX;
+            config.xAxisY = config.marginTop + config.dataHeight;
+            config.yAxisX = config.yAxisWidth;
+            config.yAxisY = config.marginTop;
+
+            // #### Setup ####
+
+            // Define scales
+            xScale = d3.scaleTime().range([0, config.dataWidth]);
+            yScale = d3.scaleLinear().range([config.dataHeight, 0]);
+            zScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+            // Define axes
+            xAxis = d3.axisBottom(xScale);
+            yAxis = d3.axisLeft(yScale)
+
+            // Define a line
+            line = d3.line()
+                .x(function (d) { return xScale(d.date); })
+                .y(function (d) { return yScale(d.quantity); });
+
+
+            // #### Inital Drawing ####
+
+            // Select the html element #chart and add an svg node with width and height
+            chart = d3.select("#"+config.divId)
+                .append("svg")
+                .attr("width", config.width)
+                .attr("height", config.height)
+                .append("g")
+                .attr("class", "offset")
+                .attr("transform", "translate(0.5, 0.5)");
+
+            // Create g element for the data space
+            dataSpace = chart.append("g")
+                .attr("class", "dataSpace")
+                .attr("transform", "translate(" + config.dataX + ", " + config.dataY + ")");
+
+            xAxisSpace = chart.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(" + config.xAxisX + ", " + config.xAxisY + ")");
+
+            yAxisSpace = chart.append("g")
+                .attr("class", "y axis")
+                .attr("transform", "translate(" + config.yAxisX + ", " + config.yAxisY + ")");
+            yAxisSpace.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 6)
+                .attr("dy", "0.7em")
+                .text("Quantity");
+
+
+            this.loadData = function (datasets)
+            {
+                // Iterate over all data in all datasets and convert date strings to unix timestamps
+                datasets.forEach(function (dataset) {
+                    dataset.values.forEach(function (value) {
+                        value.date = parseTime(value.date);
+                    });
+                });
+
+                // Adjust scales to data
+                xScale.domain([
+                    d3.min(datasets, function (c) { return d3.min(c.values, function (d) { return d.date; }) }),
+                    d3.max(datasets, function (c) { return d3.max(c.values, function (d) { return d.date; }) })
+                ]);
+                yScale.domain([
+                    d3.min(datasets, function (c) { return d3.min(c.values, function (d) { return d.quantity; }) }),
+                    d3.max(datasets, function (c) { return d3.max(c.values, function (d) { return d.quantity; }) })
+                ]);
+                zScale.domain(datasets.map(function (c) { return c.id; }));
+
+                // Draw axes
+                xAxisSpace.call(xAxis);
+                yAxisSpace.call(yAxis);
+
+                // Assign new data to lines
+                var updatedLines = dataSpace.selectAll("g.curve").data(datasets);
+
+                // Refresh lines for updated data nodes
+                updatedLines.select("path")
+                    .attr("d", function (d) { return line(d.values); });
+
+                updatedLines.select("text")
+                    .datum(function (d) { return { id: d.id, value: d.values[d.values.length - 1]}; })
+                    .attr("transform", function (d) { return "translate(" + xScale(d.value.date) + "," + yScale(d.value.quantity) + ")"; })
+                    .text(function (d) { return d.id; });
+
+
+                // Draw lines for new data nodes
+                var newCurves = updatedLines.enter()
+                    .append("g")
+                    .attr("class", "curve");
+
+                newCurves.append("path")
+                    .attr("class", "line")
+                    .attr("d", function (d) { return line(d.values); })
+                    .style("stroke", function (d) { return zScale(d.id); })
+                    .style("fill", "none");
+
+                newCurves.append("text")
+                    .datum(function (d) { return { id: d.id, value: d.values[d.values.length - 1]}; })
+                    .attr("transform", function (d) { return "translate(" + xScale(d.value.date) + "," + yScale(d.value.quantity) + ")"; })
+                    .attr("dx", 3)
+                    .attr("dy", "0.35em")
+                    .style("font", "10px sans-serif")
+                    .text(function (d) { return d.id; });
+
+
+                // Remove lines for removed data nodes
+                updatedLines.exit()
+                    .remove();
+
+            };
+        };
+
+
+
+        var lineChart;
+
+        jQuery(function () {
+
+
+            var datasetOne = [
+                {
+                    "id": "Deutsche",
+                    "values": [
+                        {"date": "2007-12-31", "quantity": 74962442},
+                        {"date": "2008-12-31", "quantity": 74816435},
+                        {"date": "2009-12-31", "quantity": 74671338},
+                        {"date": "2010-12-31", "quantity": 74552656},
+                        {"date": "2011-12-31", "quantity": 73985506},
+                        {"date": "2012-12-31", "quantity": 73880047},
+                        {"date": "2013-12-31", "quantity": 73752227},
+                        {"date": "2014-12-31", "quantity": 73657763},
+                        {"date": "2015-12-31", "quantity": 73523726},
+                        {"date": "2016-12-31", "quantity": 73301664}
+                    ]
+                },
+                {
+                    "id": "Ausländer",
+                    "values": [
+                        {"date": "2007-12-31", "quantity": 7255395},
+                        {"date": "2008-12-31", "quantity": 7185921},
+                        {"date": "2009-12-31", "quantity": 7130919},
+                        {"date": "2010-12-31", "quantity": 7198946},
+                        {"date": "2011-12-31", "quantity": 6342394},
+                        {"date": "2012-12-31", "quantity": 6643699},
+                        {"date": "2013-12-31", "quantity": 7015236},
+                        {"date": "2014-12-31", "quantity": 7539774},
+                        {"date": "2015-12-31", "quantity": 8651958},
+                        {"date": "2016-12-31", "quantity": 9219989}
+                    ]
+                },
+                {
+                    "id": "Insgesamt",
+                    "values": [
+                        {"date": "2007-12-31", "quantity": 82217837},
+                        {"date": "2008-12-31", "quantity": 82002356},
+                        {"date": "2009-12-31", "quantity": 81802257},
+                        {"date": "2010-12-31", "quantity": 81751602},
+                        {"date": "2011-12-31", "quantity": 80327900},
+                        {"date": "2012-12-31", "quantity": 80523746},
+                        {"date": "2013-12-31", "quantity": 80767463},
+                        {"date": "2014-12-31", "quantity": 81197537},
+                        {"date": "2015-12-31", "quantity": 82175684},
+                        {"date": "2016-12-31", "quantity": 82521653}
+                    ]
+                }
+            ];
+
+            var datasetTwo = [
+                {
+                    "id": "Deutsche",
+                    "values": [
+                        {"date": "1970-12-31", "quantity": 58263259},
+                        {"date": "1971-12-31", "quantity": 58314646},
+                        {"date": "1972-12-31", "quantity": 58255300},
+                        {"date": "1973-12-31", "quantity": 58110017},
+                        {"date": "1974-12-31", "quantity": 57940513},
+                        {"date": "1975-12-31", "quantity": 57744140},
+                        {"date": "1976-12-31", "quantity": 57589814},
+                        {"date": "1977-12-31", "quantity": 57460519},
+                        {"date": "1978-12-31", "quantity": 57315844},
+                        {"date": "1979-12-31", "quantity": 57188694},
+                        {"date": "1980-12-31", "quantity": 57091778},
+                        {"date": "1981-12-31", "quantity": 56991569},
+                        {"date": "1982-12-31", "quantity": 56874263},
+                        {"date": "1983-12-31", "quantity": 56732513},
+                        {"date": "1984-12-31", "quantity": 56643793},
+                        {"date": "1985-12-31", "quantity": 56538856},
+                        {"date": "1986-12-31", "quantity": 56478581},
+                        {"date": "1987-12-31", "quantity": 56951607},
+                        {"date": "1988-12-31", "quantity": 57091575},
+                        {"date": "1989-12-31", "quantity": 57671874},
+                        {"date": "1990-12-31", "quantity": 74170870},
+                        {"date": "1991-12-31", "quantity": 74207834},
+                        {"date": "1992-12-31", "quantity": 74305064},
+                        {"date": "1993-12-31", "quantity": 74360621},
+                        {"date": "1994-12-31", "quantity": 74420863},
+                        {"date": "1995-12-31", "quantity": 74474720},
+                        {"date": "1996-12-31", "quantity": 74520512},
+                        {"date": "1997-12-31", "quantity": 74638378},
+                        {"date": "1998-12-31", "quantity": 74728534},
+                        {"date": "1999-12-31", "quantity": 74827364},
+                        {"date": "2000-12-31", "quantity": 74991972},
+                        {"date": "2001-12-31", "quantity": 75122046},
+                        {"date": "2002-12-31", "quantity": 75188729},
+                        {"date": "2003-12-31", "quantity": 75189851},
+                        {"date": "2004-12-31", "quantity": 75212869},
+                        {"date": "2005-12-31", "quantity": 75148846},
+                        {"date": "2006-12-31", "quantity": 75058957},
+                        {"date": "2007-12-31", "quantity": 74962442},
+                        {"date": "2008-12-31", "quantity": 74816435},
+                        {"date": "2009-12-31", "quantity": 74671338},
+                        {"date": "2010-12-31", "quantity": 74552656},
+                        {"date": "2011-12-31", "quantity": 73985506},
+                        {"date": "2012-12-31", "quantity": 73880047},
+                        {"date": "2013-12-31", "quantity": 73752227},
+                        {"date": "2014-12-31", "quantity": 73657763},
+                        {"date": "2015-12-31", "quantity": 73523726},
+                        {"date": "2016-12-31", "quantity": 73301664}
+                    ]
+                },
+                {
+                    "id": "Ausländer",
+                    "values": [
+                        {"date": "1970-12-31", "quantity": 2737905},
+                        {"date": "1971-12-31", "quantity": 3187857},
+                        {"date": "1972-12-31", "quantity": 3554078},
+                        {"date": "1973-12-31", "quantity": 3991352},
+                        {"date": "1974-12-31", "quantity": 4050962},
+                        {"date": "1975-12-31", "quantity": 3900484},
+                        {"date": "1976-12-31", "quantity": 3852182},
+                        {"date": "1977-12-31", "quantity": 3892226},
+                        {"date": "1978-12-31", "quantity": 4005819},
+                        {"date": "1979-12-31", "quantity": 4250648},
+                        {"date": "1980-12-31", "quantity": 4566167},
+                        {"date": "1981-12-31", "quantity": 4721120},
+                        {"date": "1982-12-31", "quantity": 4671838},
+                        {"date": "1983-12-31", "quantity": 4574156},
+                        {"date": "1984-12-31", "quantity": 4405463},
+                        {"date": "1985-12-31", "quantity": 4481618},
+                        {"date": "1986-12-31", "quantity": 4661880},
+                        {"date": "1987-12-31", "quantity": 4286472},
+                        {"date": "1988-12-31", "quantity": 4623528},
+                        {"date": "1989-12-31", "quantity": 5007161},
+                        {"date": "1990-12-31", "quantity": 5582357},
+                        {"date": "1991-12-31", "quantity": 6066730},
+                        {"date": "1992-12-31", "quantity": 6669568},
+                        {"date": "1993-12-31", "quantity": 6977472},
+                        {"date": "1994-12-31", "quantity": 7117740},
+                        {"date": "1995-12-31", "quantity": 7342779},
+                        {"date": "1996-12-31", "quantity": 7491650},
+                        {"date": "1997-12-31", "quantity": 7419001},
+                        {"date": "1998-12-31", "quantity": 7308477},
+                        {"date": "1999-12-31", "quantity": 7336111},
+                        {"date": "2000-12-31", "quantity": 7267568},
+                        {"date": "2001-12-31", "quantity": 7318263},
+                        {"date": "2002-12-31", "quantity": 7347951},
+                        {"date": "2003-12-31", "quantity": 7341820},
+                        {"date": "2004-12-31", "quantity": 7287980},
+                        {"date": "2005-12-31", "quantity": 7289149},
+                        {"date": "2006-12-31", "quantity": 7255949},
+                        {"date": "2007-12-31", "quantity": 7255395},
+                        {"date": "2008-12-31", "quantity": 7185921},
+                        {"date": "2009-12-31", "quantity": 7130919},
+                        {"date": "2010-12-31", "quantity": 7198946},
+                        {"date": "2011-12-31", "quantity": 6342394},
+                        {"date": "2012-12-31", "quantity": 6643699},
+                        {"date": "2013-12-31", "quantity": 7015236},
+                        {"date": "2014-12-31", "quantity": 7539774},
+                        {"date": "2015-12-31", "quantity": 8651958},
+                        {"date": "2016-12-31", "quantity": 9219989}
+                    ]
+                },
+                {
+                    "id": "Insgesamt",
+                    "values": [
+                        {"date": "1970-12-31", "quantity": 61001164},
+                        {"date": "1971-12-31", "quantity": 61502503},
+                        {"date": "1972-12-31", "quantity": 61809378},
+                        {"date": "1973-12-31", "quantity": 62101369},
+                        {"date": "1974-12-31", "quantity": 61991475},
+                        {"date": "1975-12-31", "quantity": 61644624},
+                        {"date": "1976-12-31", "quantity": 61441996},
+                        {"date": "1977-12-31", "quantity": 61352745},
+                        {"date": "1978-12-31", "quantity": 61321663},
+                        {"date": "1979-12-31", "quantity": 61439342},
+                        {"date": "1980-12-31", "quantity": 61657945},
+                        {"date": "1981-12-31", "quantity": 61712689},
+                        {"date": "1982-12-31", "quantity": 61546101},
+                        {"date": "1983-12-31", "quantity": 61306669},
+                        {"date": "1984-12-31", "quantity": 61049256},
+                        {"date": "1985-12-31", "quantity": 61020474},
+                        {"date": "1986-12-31", "quantity": 61140461},
+                        {"date": "1987-12-31", "quantity": 61238079},
+                        {"date": "1988-12-31", "quantity": 61715103},
+                        {"date": "1989-12-31", "quantity": 62679035},
+                        {"date": "1990-12-31", "quantity": 79753227},
+                        {"date": "1991-12-31", "quantity": 80274564},
+                        {"date": "1992-12-31", "quantity": 80974632},
+                        {"date": "1993-12-31", "quantity": 81338093},
+                        {"date": "1994-12-31", "quantity": 81538603},
+                        {"date": "1995-12-31", "quantity": 81817499},
+                        {"date": "1996-12-31", "quantity": 82012162},
+                        {"date": "1997-12-31", "quantity": 82057379},
+                        {"date": "1998-12-31", "quantity": 82037011},
+                        {"date": "1999-12-31", "quantity": 82163475},
+                        {"date": "2000-12-31", "quantity": 82259540},
+                        {"date": "2001-12-31", "quantity": 82440309},
+                        {"date": "2002-12-31", "quantity": 82536680},
+                        {"date": "2003-12-31", "quantity": 82531671},
+                        {"date": "2004-12-31", "quantity": 82500849},
+                        {"date": "2005-12-31", "quantity": 82437995},
+                        {"date": "2006-12-31", "quantity": 82314906},
+                        {"date": "2007-12-31", "quantity": 82217837},
+                        {"date": "2008-12-31", "quantity": 82002356},
+                        {"date": "2009-12-31", "quantity": 81802257},
+                        {"date": "2010-12-31", "quantity": 81751602},
+                        {"date": "2011-12-31", "quantity": 80327900},
+                        {"date": "2012-12-31", "quantity": 80523746},
+                        {"date": "2013-12-31", "quantity": 80767463},
+                        {"date": "2014-12-31", "quantity": 81197537},
+                        {"date": "2015-12-31", "quantity": 82175684},
+                        {"date": "2016-12-31", "quantity": 82521653}
+                    ]
+                }
+            ]
+
+
+            lineChart = new d3examples.lineChart({
+                "divId": "chart",
+                "width": 420,
+                "height": 260,
+                "xAxisHeight": 30,
+                "yAxisWidth": 60
+            });
+
+            d3.select("input#button-one").on("click", function () {
+                lineChart.loadData(Object.create(JSON.parse(JSON.stringify(datasetOne))));
+            });
+            d3.select("input#button-two").on("click", function () {
+                lineChart.loadData(Object.create(JSON.parse(JSON.stringify(datasetTwo))));
+            });
+
+            lineChart.loadData(Object.create(JSON.parse(JSON.stringify(datasetOne))));
+        });
+
+    </script>
+</body>
+</html>
+
